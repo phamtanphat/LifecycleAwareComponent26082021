@@ -3,11 +3,13 @@ package com.example.lifecycleawarecomponent26082021;
 import static android.content.Context.LOCATION_SERVICE;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Bundle;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -17,7 +19,6 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 
 public class MyLocationListener implements DefaultLifecycleObserver {
-    private boolean enable;
     private OnCallBackLocation onCallBackLocation;
     private LocationManager locationManager;
     private Lifecycle lifecycle;
@@ -33,19 +34,21 @@ public class MyLocationListener implements DefaultLifecycleObserver {
     @Override
     public void onPause(LifecycleOwner owner) {
         Log.d("BBB","onPause");
-        if (enable){
-            enable = false;
-            locationManager.removeUpdates(locationListener);
+        locationManager.removeUpdates(locationListener);
+    }
+
+    @SuppressLint("MissingPermission")
+    public void enable() {
+        if (lifecycle.getCurrentState().isAtLeast(Lifecycle.State.INITIALIZED)) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 0F, locationListener);
         }
     }
 
-    public void enable() {
-        enable = true;
-        if (lifecycle.getCurrentState().isAtLeast(Lifecycle.State.STARTED)) {
-            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                return;
-            }
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 1f, locationListener);
+    @SuppressLint("MissingPermission")
+    @Override
+    public void onStart(@NonNull LifecycleOwner owner) {
+        if (lifecycle.getCurrentState().isAtLeast(Lifecycle.State.CREATED)) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 0F, locationListener);
         }
     }
 
@@ -55,6 +58,10 @@ public class MyLocationListener implements DefaultLifecycleObserver {
             if (onCallBackLocation != null){
                 onCallBackLocation.onChangeLocation(location);
             }
+        }
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+
         }
     };
 
